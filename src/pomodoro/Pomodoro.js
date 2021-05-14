@@ -2,9 +2,29 @@ import React, { useState } from "react";
 import classNames from "../utils/class-names";
 import useInterval from "../utils/useInterval";
 
+function nextSession(focusDuration, breakDuration) {
+  return (currentSession) => {
+    if (currentSession.label === "Focusing") {
+      return {
+        label: "On Break",
+        timeRemaining: breakDuration * 60,
+      };
+    }
+    return {
+      label: "Focusing",
+      timeRemaining: focusDuration * 60,
+    };
+  };
+}
+
 function Pomodoro() {
   // Timer starts out paused
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  // Current session is null when timer isn't running
+  const [session, setSession] = useState(null);
+
+  const focusDuration = 25;
+  const breakDuration = 5;
 
   useInterval(
     () => {
@@ -14,8 +34,23 @@ function Pomodoro() {
   );
 
   function playPause() {
-    setIsTimerRunning((prevState) => !prevState);
-  }
+    setIsTimerRunning((prevState) => {
+      const nextState = !prevState
+      if (nextState) {
+        setSession((prevStateSession) => {
+          // timer started and prev state = null; start focus session
+          if (prevStateSession === null) {
+              return {
+                label: "Focusing",
+                timeRemaining: focusDuration * 60,
+              };
+          }
+          return prevStateSession;
+        });
+      }
+      return nextState;
+      });
+    }
 
   return (
     <div className="pomodoro">
